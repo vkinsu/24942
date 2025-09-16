@@ -3,7 +3,7 @@
 #include <unistd.h> // getuid, getgid, setpgid и тд (системные вызовы)
 #include <sys/resource.h>
 #include <string.h>
-#define PATH_MAX 1024
+#define PATH_MAX 2048
 #define llu unsigned long long
 
 extern char **environ;
