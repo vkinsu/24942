@@ -1,4 +1,4 @@
-#include <sys/types.h>git
+#include <sys/types.h>
 #include <stdio.h>
 #include <time.h>
 #include <stdlib.h>
