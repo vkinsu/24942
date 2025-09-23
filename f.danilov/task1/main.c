@@ -148,28 +148,28 @@ int env_variable(const char *arg) {
     return 0;
 }
 
+
 int main(int argc, char *argv[]) {
-    // Если никаких опций не указано
     if (argc == 1) {
         printf("Опции не указаны.\n");
         print_usage();
         exit(EXIT_FAILURE);
     }
 
-    int opt;
-    int i_flag = 0, s_flag = 0, p_flag = 0, u_flag = 0, c_flag = 0, d_flag = 0, v_flag = 0;
-    char *U_value = NULL, *C_value = NULL, *V_value = NULL;
-
-    int temp_argc = argc; // без имени программы
-    char **temp_args = malloc(temp_argc * sizeof(char*));
-    temp_args[0] = argv[0];
-    for (int i = 1; i < temp_argc; i++) {
-        temp_args[i] = argv[argc - i];
+    // Создаем перевернутый массив аргументов
+    char **reversed_argv = malloc(argc * sizeof(char*));
+    reversed_argv[0] = argv[0];  // имя программы остается на месте
+    
+    // Переворачиваем аргументы (считываем справа налево)
+    for (int i = 1; i < argc; i++) {
+        reversed_argv[i] = argv[argc - i];  // argv[argc] == NULL, поэтому начинаем с argc-1
     }
 
-    optind = 0;
+    // Теперь optind будет работать с перевернутыми аргументами
+    int opt;
+    opterr = 0;  // Отключаем стандартные сообщения об ошибках
     
-    while ((opt = getopt(temp_argc, temp_args, "ispuU:cC:dvV:")) != -1) { // ispuU:cC:dvV: - возможные параметры
+    while ((opt = getopt(argc, reversed_argv, "ispuU:cC:dvV:")) != -1) {
         switch (opt) {
             case 'i':
                 printf("=== Информация о пользователях и группах ===\n");
@@ -227,19 +227,14 @@ int main(int argc, char *argv[]) {
                 }
                 printf("\n");
                 break;
-            case '-':
-                perror("Разделяйте опции пробелом");
-                print_usage();
-                exit(EXIT_FAILURE);
             case '?':
-                fprintf(stderr, "Неизвестная опция: %c\n", optopt);
+                fprintf(stderr, "Неизвестная опция или отсутствует аргумент: %c\n", optopt);
                 print_usage();
-                exit(EXIT_FAILURE);
-            default:
-                print_usage();
+                free(reversed_argv);
                 exit(EXIT_FAILURE);
         }
     }
 
+    free(reversed_argv);
     return 0;
 }
