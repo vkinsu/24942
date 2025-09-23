@@ -115,7 +115,6 @@ void current_dir() {
 }
 
 void env() {
-    printf("Переменные среды:\n");
     for (char **env = environ; *env != NULL; env++) {
         printf("  %s\n", *env);
     }
