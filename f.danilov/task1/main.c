@@ -167,7 +167,6 @@ int main(int argc, char *argv[]) {
 
     // Теперь optind будет работать с перевернутыми аргументами
     int opt;
-    opterr = 0;  // Отключаем стандартные сообщения об ошибках
     
     while ((opt = getopt(argc, reversed_argv, "ispuU:cC:dvV:")) != -1) {
         switch (opt) {
