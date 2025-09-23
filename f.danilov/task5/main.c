@@ -3,156 +3,112 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <string.h>
-#include <ctype.h>
-#define MAX_LEN 1024 // максимальная длина строки
 
-// структура хранения строк
-typedef struct ListNode { 
-    char * data;
-    int num_str;
-    struct ListNode *next;
-} ListNode;
+#define MAX_LINES 1000
+#define MAX_LINE_LENGTH 1024
 
-// Функция для добавлния узла
-void add_node(ListNode ** list, char * new_str){
-    ListNode * new_node = malloc(sizeof(ListNode)); 
-    new_node->data = (char*)malloc(strlen(new_str) + 1);
-    if (new_node == NULL || new_node->data == NULL) {
-        perror("Ошибка выделения памяти");
-        exit(EXIT_FAILURE);
+// Структура для хранения позиций и длин строк
+typedef struct {
+    off_t offset;    // Позиция начала строки в файле
+    size_t length;   // Длина строки (без \n)
+} LineInfo;
+
+int main(int argc, char *argv[]) {
+    if (argc != 2) {
+        fprintf(stderr, "Использование: %s <имя_файла>\n", argv[0]);
+        return 1;
     }
 
-    strcpy(new_node->data, new_str);
-    new_node->next = NULL;
-    if (*list == NULL) {
-        *list = new_node;     
-    } else {
-        ListNode * curr = *list;
-        while (curr->next != NULL){
-            curr = curr->next;
-        }
-        new_node->num_str = curr->num_str + 1;
-        curr->next = new_node;
-    }
-}
-
-// Функция для вывода всех строк из списка
-void print_list(ListNode* list) {
-    ListNode* current = list;
-    int count = 1;
-    printf("=== Все строки ===\n");
-    while (current != NULL) {
-        printf("%d: %s\n", count, current->data);
-        current = current->next;
-        count++;
-    }
-}
-
-
-void open_file(const char *file_name, ListNode **list) {
-    int file = open(file_name, O_RDONLY);
-    if (file == -1) {
-        perror("Ошибка при открытии файла");
-        exit(EXIT_FAILURE);
+    // Открываем файл
+    int fd = open(argv[1], O_RDONLY);
+    if (fd == -1) {
+        perror("Ошибка открытия файла");
+        return 1;
     }
 
-    char buffer[MAX_LEN];
-    char line[MAX_LEN];
+    LineInfo lines[MAX_LINES];
+    int line_count = 0;
+    off_t current_offset = 0;
+    char buffer[1024];
     ssize_t bytes_read;
-    int line_index = 0;
 
-    while ((bytes_read = read(file, buffer, sizeof(buffer) - 1)) > 0) {
+    // Построение таблицы отступов и длин строк
+    printf("=== Построение таблицы отступов ===\n");
+    
+    while ((bytes_read = read(fd, buffer, sizeof(buffer))) > 0) {
         for (int i = 0; i < bytes_read; i++) {
-            if (buffer[i] == '\n' || line_index >= MAX_LEN - 1) {
-                line[line_index] = '\0';
-                add_node(list, line);
-                line_index = 0;
-            } else {
-                line[line_index++] = buffer[i];
+            if (buffer[i] == '\n') {
+                // Записываем информацию о строке
+                if (line_count < MAX_LINES) {
+                    lines[line_count].offset = current_offset;
+                    lines[line_count].length = lseek(fd, 0L, SEEK_CUR) - current_offset - bytes_read + i;
+                    
+                    printf("Строка %d: offset=%ld, length=%zu\n", 
+                           line_count + 1, 
+                           (long)lines[line_count].offset, 
+                           lines[line_count].length);
+                    
+                    line_count++;
+                }
+                current_offset = lseek(fd, 0L, SEEK_CUR) - bytes_read + i + 1;
             }
         }
     }
 
-    // Обработка последней строки, если файл не заканчивается на '\n'
-    if (line_index > 0) {
-        line[line_index] = '\0';
-        add_node(list, line);
-    }
-
-    if (bytes_read == -1) {
-        perror("Ошибка при чтении файла");
-    }
-
-    if (close(file) == -1) {
-        perror("Ошибка при закрытии файла");
-    }
-}
-
-// Функция для поиска строки по номеру
-void find_str(ListNode *list, int num) {
-    ListNode *current = list;
-    while (current != NULL) {
-        if (current->num_str == num) {
-            printf("Строка %d: %s\n", num, current->data);
-            return;
-        }
-        current = current->next;
-    }
-    printf("Строка с номером %d не найдена\n", num);
-}
-
-// Функция для освобождения памяти
-int free_memory(ListNode* list){
-    ListNode * curr = list;
-    while (curr != NULL){
-        ListNode* next = curr->next;
-        free(curr->data);
-        free(curr);
-        curr = next;
-    }
-}
-
-int main(int argc, char *argv[]) {
-    if (argc < 2) {
-        fprintf(stderr, "Использование: %s <имя_файла>\n", argv[0]);
-        exit(EXIT_FAILURE);
-    }
-    
-    const char *file_name = argv[1];
-    ListNode *list = NULL;
-
-    open_file(file_name, &list);
-    print_list(list);
-
-    char input[20];
-    int num;
-    
-    printf("Введите номер строки: ");
-    if (scanf("%19s", input) != 1) {
-        printf("Ошибка ввода\n");
-        free_memory(list);
-        return 1;
-    }
-    
-    num = atoi(input);
-    while (num <= 0) {
-        if (num == 0){
-            printf("Окончание работы\n");
-            return 0;
-        }
+    // Обработка последней строки (если файл не заканчивается на \n)
+    if (current_offset < lseek(fd, 0L, SEEK_END)) {
+        lines[line_count].offset = current_offset;
+        lines[line_count].length = lseek(fd, 0L, SEEK_END) - current_offset;
         
-        printf("Введите корректный номер строки : ");
-        if (scanf("%19s", input) != 1) {
+        printf("Строка %d: offset=%ld, length=%zu\n", 
+                           line_count + 1, 
+                           (long)lines[line_count].offset, 
+                           lines[line_count].length);
+        line_count++;
+    }
+
+    // Основной цикл запросов
+    while (1) {
+        int line_num;
+        printf("\nВведите номер строки (0 для выхода): ");
+        
+        if (scanf("%d", &line_num) != 1) {
             printf("Ошибка ввода\n");
+            while (getchar() != '\n'); // Очистка буфера
+            continue;
+        }
+
+        if (line_num == 0) {
+            printf("Завершение работы\n");
             break;
         }
-        num = atoi(input);
-    }
-    
-    if (num > 0) {
-        find_str(list, num-1);
+
+        if (line_num < 1 || line_num > line_count) {
+            printf("Некорректный номер строки. Допустимый диапазон: 1-%d\n", line_count);
+            continue;
+        }
+
+        // Позиционируемся на начало строки
+        LineInfo *line = &lines[line_num - 1];
+        if (lseek(fd, line->offset, SEEK_SET) == -1) {
+            perror("Ошибка позиционирования");
+            continue;
+        }
+
+        // Читаем строку
+        char line_buffer[MAX_LINE_LENGTH];
+        size_t to_read = (line->length < sizeof(line_buffer) - 1) ? 
+                         line->length : sizeof(line_buffer) - 1;
+        
+        ssize_t read_bytes = read(fd, line_buffer, to_read);
+        if (read_bytes > 0) {
+            line_buffer[read_bytes] = '\0';
+            printf("Строка %d: %s\n", line_num, line_buffer);
+        } else {
+            printf("Ошибка чтения строки\n");
+        }
     }
 
-    free_memory(list);
+    close(fd);
     return 0;
 }
