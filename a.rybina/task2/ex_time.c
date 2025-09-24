@@ -9,7 +9,7 @@ extern char *tzname[]; //stores the names of the time zones
 int main(){
     time_t now;
 
-    setenv("TZ", "UTC8", 1);
+    setenv("TZ", "UTC-8", 1);
     tzset();
 
     (void) time(&now); //get current time
