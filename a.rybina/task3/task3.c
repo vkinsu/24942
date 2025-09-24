@@ -16,11 +16,18 @@
 #include <sys/stat.h>
 
 
-int main() {
-     // Set file permissions to 600 (owner read/write only)
-    //chmod("file.txt", 0600);
+int main(int argc, char *argv[]) {
+    // Check if filename is provided
+    if (argc != 2) {
+        printf("Usage: %s <filename>\n", argv[0]);
+        return 1;
+    }
     
-
+    char *filename = argv[1];
+    
+    // Set file permissions to 600 (owner read/write only)
+    //chmod(filename, 0600);
+    
     uid_t real_uid = getuid();
     uid_t eff_uid = geteuid();
 
@@ -28,13 +35,13 @@ int main() {
     printf("Effective UID: %d\n", eff_uid);
 
     // open file
-    FILE *file = fopen("file.txt", "w");
+    FILE *file = fopen(filename, "w");
     if (file == NULL) {
         perror("Failed to open file");
+    } else {
+        fclose(file);
+        printf("File opened successfully\n\n");
     }
-    fclose(file);
-    
-    printf("File opened successfully\n\n");
 
     // set uid
     setuid(real_uid);
@@ -43,7 +50,7 @@ int main() {
     printf("Real UID: %d\n", getuid());
     printf("Effective UID: %d\n", geteuid());
 
-    file = fopen("file.txt", "w");
+    file = fopen(filename, "w");
     if (file == NULL) {
         perror("Failed to open file");
         return 1;
