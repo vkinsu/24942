@@ -8,8 +8,8 @@
 
 // Structure for linked list node
 struct Node {
-    char *data;           // Pointer to string data
-    struct Node *next;    // Pointer to next node
+    char *data;         
+    struct Node *next;  
 };
 
 int main() {
@@ -22,27 +22,24 @@ int main() {
     while (1) {
         printf("> ");
         fgets(input, sizeof(input), stdin);
-        
-        // Check if input starts with '.'
+
         if (input[0] == '.') {
             break;
         }
-        
-        // Remove newline character if present
+
         size_t len = strlen(input);
         if (len > 0 && input[len-1] == '\n') {
             input[len-1] = '\0';
             len--;
         }
         
-        // Allocate memory for new node
         struct Node *newNode = (struct Node*)malloc(sizeof(struct Node));
         if (newNode == NULL) {
             printf("Memory allocation failed!\n");
             return 1;
         }
         
-        // Allocate memory for string data
+        
         newNode->data = (char*)malloc(len + 1);
         if (newNode->data == NULL) {
             printf("Memory allocation failed!\n");
@@ -50,11 +47,11 @@ int main() {
             return 1;
         }
         
-        // Copy string to allocated memory
+        
         strcpy(newNode->data, input);
         newNode->next = NULL;
         
-        // Add to linked list
+        
         if (head == NULL) {
             head = newNode;
             current = newNode;
@@ -64,7 +61,7 @@ int main() {
         }
     }
     
-    // Print all strings from the list
+    
     printf("\nAll entered strings:\n");
     current = head;
     while (current != NULL) {
@@ -72,7 +69,7 @@ int main() {
         current = current->next;
     }
     
-    // Free allocated memory
+    
     current = head;
     while (current != NULL) {
         struct Node *temp = current;
