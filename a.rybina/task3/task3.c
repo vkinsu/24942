@@ -18,9 +18,9 @@
 
 int main() {
      // Set file permissions to 600 (owner read/write only)
-    chmod("file.txt", 0600);
+    //chmod("file.txt", 0600);
     
-    
+
     uid_t real_uid = getuid();
     uid_t eff_uid = geteuid();
 
