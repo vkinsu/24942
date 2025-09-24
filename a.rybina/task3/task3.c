@@ -61,7 +61,6 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
-// ls -l file.txt - check permissions
-// Set SUID bit - chmod u+s task3.exe
-// ls -l task3.exe - check permissions
-
+// ls -l file.txt
+// chmod u+s task3.exe
+// ls -l task3.exe
