@@ -1,21 +1,26 @@
 #include <stdio.h>
-#include <time.h>
+// #include <time.h>
 
-extern char *tzname[];
+// extern char *tzname[];
 
-int main()
-{
-    time_t now;
-    struct tm *sp;
+// int main()
+// {
+//     time_t now;
+//     struct tm *sp;
 
-    (void) time( &now );
+//     (void) time( &now );
 
-    printf("%s", ctime( &now ) );
+//     printf("%s", ctime( &now ) );
 
-    sp = localtime(&now);
-    printf("%d/%d/%02d %d:%02d %s\n",
-        sp->tm_mon + 1, sp->tm_mday,
-        sp->tm_year, sp->tm_hour,
-        sp->tm_min, tzname[sp->tm_isdst]);
-    return 0;
- }
+//     sp = localtime(&now);
+//     printf("%d/%d/%02d %d:%02d %s\n",
+//         sp->tm_mon + 1, sp->tm_mday,
+//         sp->tm_year, sp->tm_hour,
+//         sp->tm_min, tzname[sp->tm_isdst]);
+//     return 0;
+//  }
+
+int main() {
+  printf("Hello, World!\n");
+  return 0;
+}
