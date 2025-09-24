@@ -9,6 +9,8 @@
 // 2. Сделайте программу доступной для запуска членам вашей группы и пусть ваши одногруппники исполнят программу.
 // 3. Командой chmod u+s prog установите бит установки идентификатора пользователя и пусть ваши одногруппники опять исполнят эту программу.
 
+//chown !!!
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -24,9 +26,6 @@ int main(int argc, char *argv[]) {
     }
     
     char *filename = argv[1];
-    
-    // Set file permissions to 600 (owner read/write only)
-    //chmod(filename, 0600);
     
     uid_t real_uid = getuid();
     uid_t eff_uid = geteuid();
