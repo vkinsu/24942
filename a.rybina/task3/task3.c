@@ -35,7 +35,7 @@ int main() {
     }
     fclose(file);
     
-    printf("File opened successfully\n");
+    printf("File opened successfully\n\n");
 
     // set uid
     setuid(real_uid);
@@ -54,3 +54,8 @@ int main() {
     
     return 0;
 }
+
+// ls -l file.txt - check permissions
+// Set SUID bit - chmod u+s task3.exe
+// ls -l task3.exe - check permissions
+
