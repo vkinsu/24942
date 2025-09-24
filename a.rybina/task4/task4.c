@@ -15,22 +15,31 @@ struct Node {
 int main() {
     struct Node *head = NULL;  // Head of the linked list
     struct Node *current = NULL;  // Current node pointer
-    char input[1000];       // Buffer for input (large enough for long strings)
+    char *input = NULL;       // Dynamic buffer for input
+    size_t input_size = 0;    // Size of allocated buffer
+    ssize_t bytes_read;       // Number of bytes read by getline
     
     printf("Enter strings:\n");
     
     while (1) {
         printf("> ");
-        fgets(input, sizeof(input), stdin);
-
+        
+        // Read line dynamically with getline
+        bytes_read = getline(&input, &input_size, stdin);
+        
+        if (bytes_read == -1) {
+            printf("Error reading input!\n");
+            break;
+        }
+        
         if (input[0] == '.') {
             break;
         }
 
-        size_t len = strlen(input);
-        if (len > 0 && input[len-1] == '\n') {
-            input[len-1] = '\0';
-            len--;
+        // Remove newline character if present
+        if (bytes_read > 0 && input[bytes_read-1] == '\n') {
+            input[bytes_read-1] = '\0';
+            bytes_read--;
         }
         
         struct Node *newNode = (struct Node*)malloc(sizeof(struct Node));
@@ -39,15 +48,15 @@ int main() {
             return 1;
         }
         
-        
-        newNode->data = (char*)malloc(len + 1);
+        // Allocate memory for string data
+        newNode->data = (char*)malloc(bytes_read + 1);
         if (newNode->data == NULL) {
             printf("Memory allocation failed!\n");
             free(newNode);
             return 1;
         }
         
-        
+        // Copy string to allocated memory
         strcpy(newNode->data, input);
         newNode->next = NULL;
         
@@ -76,6 +85,11 @@ int main() {
         current = current->next;
         free(temp->data);
         free(temp);
+    }
+    
+    // Free input buffer
+    if (input != NULL) {
+        free(input);
     }
     
     return 0;
