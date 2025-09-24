@@ -31,7 +31,6 @@ int main() {
     FILE *file = fopen("file.txt", "w");
     if (file == NULL) {
         perror("Failed to open file");
-        return 1;
     }
     fclose(file);
     
