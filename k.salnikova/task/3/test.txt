@@ -1,0 +1,16 @@
+До setuid():
+Real UID: 1001 (testuser)
+
+Effective UID: 1000 (senia - владелец программы)
+
+Файл открыт успешно - потому что Effective UID = владельцу файла
+
+После setuid():
+Real UID: 1001 (testuser)
+
+Effective UID: 1001 (testuser)
+
+Ошибка открытия файла - потому что Effective UID = testuser, у которого нет прав на файл
+
+
+sudo -u testuser /home/senia/suid_test/program
