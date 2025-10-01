@@ -1,21 +1,25 @@
+#include <sys/types.h>
 #include <stdio.h>
 #include <time.h>
 #include <stdlib.h>
+extern char *tzname[];
 
-int main(){
-    setenv("TZ", "America/Los_Angeles", 1); // los angeles - california
-    tzset(); 
-    
+int main()
+{
     time_t now;
     struct tm *sp;
 
-    (void)time(&now);
+    //временная зона в Калифорнии (только PST)
+    setenv("TZ", "PST8", 1);
+    tzset();
 
-    // в локальное (теперь — PST/PDT)
+    (void) time(&now);
+
     sp = localtime(&now);
+    printf("California time (PST): %d/%d/%02d %d:%02d %s\n",
+        sp->tm_mon + 1, sp->tm_mday,
+        sp->tm_year%100, sp->tm_hour,
+        sp->tm_min, tzname[sp->tm_isdst]);
     
-    //  время в формате, аналогичном ctime
-    printf("%s", asctime(sp));
-    
-    return 0;
+    exit(0);
 }

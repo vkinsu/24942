@@ -3,15 +3,37 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <string.h>
+#include <signal.h>
 
 #define MAX_LINES 1000
 #define MAX_LINE_LENGTH 1024
 
+int line_count = 0;
+int fd = -1;
+
 // Структура для хранения позиций и длин строк
 typedef struct {
     off_t offset;    // Позиция начала строки в файле
-    ssize_t length;   // Длина строки (без \n)
+    size_t length;   // Длина строки (без \n)
+    char buffer_data[MAX_LINE_LENGTH];
 } LineInfo;
+
+LineInfo lines[MAX_LINES];
+
+static void alarmHandler(int signo){
+    printf("\nВремя кончилось!\n");
+
+    printf("Содержимое файла: \n");
+    for (int i = 0; i < line_count; i++){
+        printf("%s\n", lines[i].buffer_data);
+    }
+    
+    if (fd != -1) {
+        close(fd);
+    }
+
+    exit(1);
+}
 
 
 int main(int argc, char *argv[]) {
@@ -27,10 +49,8 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    LineInfo lines[MAX_LINES];
-    int line_count = 0;
     off_t current_offset = 0;
-    char buffer[1024];
+    char buffer[MAX_LINE_LENGTH];
     size_t bytes_read;
 
     // Построение таблицы отступов и длин строк
@@ -39,10 +59,20 @@ int main(int argc, char *argv[]) {
     while ((bytes_read = read(fd, buffer, sizeof(buffer))) > 0) {
         for (int i = 0; i < bytes_read; i++) {
             if (buffer[i] == '\n') {
+                // Сохраняем текущую позицию в файле
+                off_t file_pos = lseek(fd, 0L, SEEK_CUR);
+                
                 // Записываем информацию о строке
                 if (line_count < MAX_LINES) {
                     lines[line_count].offset = current_offset;
-                    lines[line_count].length = lseek(fd, 0L, SEEK_CUR) - current_offset - bytes_read + i;
+                    lines[line_count].length = file_pos - bytes_read + i - current_offset;
+                    
+                    // Вычисляем позицию в буфере
+                    size_t buffer_start_pos = current_offset - (file_pos - bytes_read);
+                    if (buffer_start_pos < bytes_read && lines[line_count].length < MAX_LINE_LENGTH) {
+                        memcpy(lines[line_count].buffer_data, &buffer[buffer_start_pos], lines[line_count].length);
+                        lines[line_count].buffer_data[lines[line_count].length] = '\0';
+                    }
                     
                     printf("Строка %d: offset=%ld, length=%zu\n", 
                            line_count + 1, 
@@ -51,7 +81,8 @@ int main(int argc, char *argv[]) {
                     
                     line_count++;
                 }
-                current_offset = lseek(fd, 0L, SEEK_CUR) - bytes_read + i + 1;
+                
+                current_offset = file_pos - bytes_read + i + 1;
             }
         }
     }
@@ -68,16 +99,23 @@ int main(int argc, char *argv[]) {
         line_count++;
     }
 
+
+
+    signal(SIGALRM, alarmHandler); // устанавливаем обработчик сигнала
     // Основной цикл запросов
     while (1) {
         int line_num;
-        printf("\nВведите номер строки (0 для выхода):");
+        printf("\nВведите номер строки (0 для выхода). У вас есть 5 секунд чтобы ввести данные:");
+        alarm(5);
 
         if (scanf("%d", &line_num) != 1) {
             printf("Ошибка ввода\n");
             while (getchar() != '\n'); // Очистка буфера
+            alarm(0);
             continue;
         }
+
+        alarm(0); // отключение таймера
 
         if (line_num == 0) {
             printf("Завершение работы\n");
@@ -89,27 +127,15 @@ int main(int argc, char *argv[]) {
             continue;
         }
 
-        // Позиционируемся на начало строки
-        LineInfo *line = &lines[line_num - 1];
-        if (lseek(fd, line->offset, SEEK_SET) == -1) {
-            perror("Ошибка позиционирования");
-            continue;
-        }
-
-        // Читаем строку
-        char line_buffer[MAX_LINE_LENGTH];
-        size_t to_read = (line->length < sizeof(line_buffer) - 1) ? 
-                         line->length : sizeof(line_buffer) - 1;
-        ssize_t read_bytes = read(fd, line_buffer, to_read);
-
-
-        if (read_bytes > 0) {
-            line_buffer[read_bytes] = '\0';
-            printf("Строка %d: %s\n", line_num, line_buffer);
-        } else if (read_bytes == 0){
-            printf("Cтрока пустая\n");
-        } else{
-            printf("Ошибка чтения строки");
+        
+        int index = line_num - 1;
+        
+        if (lines[index].length > 0) {
+            printf("Строка %d: %s\n", line_num, lines[index].buffer_data);
+        } else if (lines[index].length == 0) {
+            printf("Строка пустая\n");
+        } else {
+            printf("Ошибка чтения строки\n");
         }
     }
 
